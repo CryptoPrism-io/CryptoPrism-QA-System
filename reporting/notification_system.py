@@ -21,9 +21,9 @@ try:
 except ImportError:
     OPENAI_AVAILABLE = False
 
-from ..core.base_qa import QAResult
-from ..core.config import QAConfig
-from .qa_report_logger import QAReportLogger
+from core.base_qa import QAResult
+from core.config import QAConfig
+from reporting.qa_report_logger import QAReportLogger
 
 logger = logging.getLogger(__name__)
 

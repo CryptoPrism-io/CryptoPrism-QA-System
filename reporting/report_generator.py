@@ -11,8 +11,8 @@ from datetime import datetime, timezone
 from pathlib import Path
 import os
 
-from ..core.base_qa import QAResult
-from ..core.config import QAConfig
+from core.base_qa import QAResult
+from core.config import QAConfig
 
 logger = logging.getLogger(__name__)
 

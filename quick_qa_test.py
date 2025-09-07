@@ -13,15 +13,11 @@ from sqlalchemy import text
 current_dir = Path(__file__).parent
 sys.path.insert(0, str(current_dir))
 
-# Go up one level to reach the parent directory containing quality_assurance_v2
-parent_dir = current_dir.parent
-sys.path.insert(0, str(parent_dir))
-
 try:
-    from quality_assurance_v2.core.config import QAConfig
-    from quality_assurance_v2.core.database import DatabaseManager
-    from quality_assurance_v2.core.base_qa import QAResult
-    from quality_assurance_v2.reporting.notification_system import NotificationSystem
+    from core.config import QAConfig
+    from core.database import DatabaseManager
+    from core.base_qa import QAResult
+    from reporting.notification_system import NotificationSystem
 except ImportError as e:
     print(f"Import error: {e}")
     print("Make sure you run this from the correct directory")

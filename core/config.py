@@ -27,10 +27,10 @@ class QAConfig:
         if config_file:
             self.config_file = config_file
         else:
-            # Look for .env in project root (three levels up from this file)
-            # Path: core/config.py -> quality_assurance_v2 -> gcp_postgres_sandbox -> CryptoPrism-DB
+            # Look for .env in project root (one level up from core/)
+            # Path: core/config.py -> QA/
             current_dir = Path(__file__).parent
-            self.config_file = str(current_dir.parent.parent.parent / ".env")
+            self.config_file = str(current_dir.parent / ".env")
         self._load_environment()
         self._validate_required_vars()
         self._set_qa_thresholds()

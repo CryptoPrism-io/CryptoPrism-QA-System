@@ -9,7 +9,7 @@ from pathlib import Path
 from typing import Dict, List, Any, Optional
 import re
 
-from ..core.base_qa import QAResult
+from core.base_qa import QAResult
 
 logger = logging.getLogger(__name__)
 
