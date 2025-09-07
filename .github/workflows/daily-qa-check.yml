@@ -1,0 +1,83 @@
+name: Daily Database QA Check
+
+on:
+  schedule:
+    # Run daily at 6:00 AM UTC
+    - cron: '0 6 * * *'
+  workflow_dispatch:
+    inputs:
+      test_type:
+        description: 'Type of QA test to run'
+        required: false
+        default: 'individual'
+        type: choice
+        options:
+        - individual
+        - comprehensive
+        - quick
+
+jobs:
+  database-qa:
+    runs-on: ubuntu-latest
+    name: Database Quality Assurance
+    
+    steps:
+    - name: Checkout repository
+      uses: actions/checkout@v4
+      
+    - name: Set up Python
+      uses: actions/setup-python@v4
+      with:
+        python-version: '3.9'
+        
+    - name: Cache dependencies
+      uses: actions/cache@v3
+      with:
+        path: ~/.cache/pip
+        key: ${{ runner.os }}-pip-${{ hashFiles('**/requirements.txt') }}
+        restore-keys: |
+          ${{ runner.os }}-pip-
+          
+    - name: Install dependencies
+      run: |
+        python -m pip install --upgrade pip
+        pip install -r requirements.txt
+        
+    - name: Run QA Tests
+      run: |
+        # Determine which test to run based on input or default to individual
+        TEST_TYPE="${{ github.event.inputs.test_type || 'individual' }}"
+        echo "Running $TEST_TYPE QA tests..."
+        
+        if [ "$TEST_TYPE" = "quick" ]; then
+          python quick_qa_test.py
+        else
+          python run_qa.py --$TEST_TYPE
+        fi
+      env:
+        DB_HOST: ${{ secrets.DB_HOST }}
+        DB_USER: ${{ secrets.DB_USER }}
+        DB_PASSWORD: ${{ secrets.DB_PASSWORD }}
+        DB_PORT: ${{ secrets.DB_PORT }}
+        DB_NAME: ${{ secrets.DB_NAME }}
+        TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
+        TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}
+        OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
+        
+    - name: Upload QA Reports
+      uses: actions/upload-artifact@v3
+      if: always()
+      with:
+        name: qa-reports-${{ github.run_number }}
+        path: |
+          reports/
+          logs/
+          QA_REPORT_LOG.md
+          QA_STATUS_SUMMARY.md
+        retention-days: 30
+        
+    - name: Notify on Failure
+      if: failure()
+      run: |
+        echo "QA tests failed! Check the logs for details."
+        # Could add additional notification logic here

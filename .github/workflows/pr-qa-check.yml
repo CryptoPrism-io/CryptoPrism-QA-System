@@ -1,0 +1,156 @@
+name: Pull Request QA Check
+
+on:
+  pull_request:
+    branches: [ main, develop ]
+    paths:
+      - '**/*.py'
+      - 'requirements.txt'
+      - '.github/workflows/**'
+  push:
+    branches: [ main ]
+    paths:
+      - '**/*.py'
+      - 'requirements.txt'
+
+jobs:
+  pr-qa-validation:
+    runs-on: ubuntu-latest
+    name: PR Quality Assurance Validation
+    
+    steps:
+    - name: Checkout repository
+      uses: actions/checkout@v4
+      
+    - name: Set up Python
+      uses: actions/setup-python@v4
+      with:
+        python-version: '3.9'
+        
+    - name: Install dependencies
+      run: |
+        python -m pip install --upgrade pip
+        pip install -r requirements.txt
+        pip install pytest flake8 black isort
+        
+    - name: Code Quality Checks
+      run: |
+        echo "🔍 Running code quality checks..."
+        
+        # Check Python syntax
+        echo "Checking Python syntax..."
+        python -m py_compile run_qa.py quick_qa_test.py
+        
+        # Check imports
+        echo "Checking imports..."
+        python -c "
+        import sys
+        sys.path.insert(0, '.')
+        try:
+            from core.config import QAConfig
+            from core.database import DatabaseManager
+            from core.base_qa import QAResult
+            print('✅ Core imports successful')
+        except ImportError as e:
+            print(f'❌ Import error: {e}')
+            sys.exit(1)
+        "
+        
+    - name: Basic Connection Test (No Database)
+      run: |
+        echo "🔧 Testing QA system components..."
+        
+        # Test configuration loading (without actual DB connection)
+        python -c "
+        import os
+        from core.config import QAConfig
+        
+        # Set dummy environment variables for testing
+        os.environ['DB_HOST'] = 'localhost'
+        os.environ['DB_USER'] = 'test'
+        os.environ['DB_PASSWORD'] = 'test'
+        os.environ['DB_PORT'] = '5432'
+        
+        try:
+            config = QAConfig()
+            print('✅ Configuration system working')
+        except Exception as e:
+            print(f'❌ Configuration error: {e}')
+            exit(1)
+        "
+        
+    - name: Validate Documentation
+      run: |
+        echo "📚 Validating documentation..."
+        
+        # Check that key files exist
+        FILES_TO_CHECK="README.md SETUP.md requirements.txt .env.example LICENSE"
+        
+        for file in $FILES_TO_CHECK; do
+          if [ -f "$file" ]; then
+            echo "✅ $file exists"
+          else
+            echo "❌ $file missing"
+            exit 1
+          fi
+        done
+        
+    - name: Test Structure Validation
+      run: |
+        echo "🏗️ Validating project structure..."
+        
+        # Check that required directories exist
+        DIRS_TO_CHECK="core reporting tests utils"
+        
+        for dir in $DIRS_TO_CHECK; do
+          if [ -d "$dir" ]; then
+            echo "✅ Directory $dir exists"
+          else
+            echo "❌ Directory $dir missing"
+            exit 1
+          fi
+        done
+        
+        # Check that key Python files exist
+        FILES_TO_CHECK="run_qa.py quick_qa_test.py core/config.py core/database.py"
+        
+        for file in $FILES_TO_CHECK; do
+          if [ -f "$file" ]; then
+            echo "✅ $file exists"
+          else
+            echo "❌ $file missing"  
+            exit 1
+          fi
+        done
+        
+    - name: Requirements Check
+      run: |
+        echo "📦 Checking requirements..."
+        
+        # Verify all requirements can be parsed
+        pip check
+        
+        # Check for common security issues (basic check)
+        python -c "
+        with open('requirements.txt', 'r') as f:
+            content = f.read()
+            if 'sqlalchemy' in content.lower():
+                print('✅ SQLAlchemy dependency found')
+            if 'pg8000' in content.lower() or 'psycopg2' in content.lower():
+                print('✅ PostgreSQL driver found')
+            else:
+                print('⚠️ No PostgreSQL driver found in requirements')
+        "
+        
+    - name: PR Summary
+      if: github.event_name == 'pull_request'
+      run: |
+        echo "## 🔍 QA System Validation Summary" >> $GITHUB_STEP_SUMMARY
+        echo "" >> $GITHUB_STEP_SUMMARY
+        echo "✅ **Code Quality**: Syntax and imports validated" >> $GITHUB_STEP_SUMMARY
+        echo "✅ **Configuration**: QA config system functional" >> $GITHUB_STEP_SUMMARY  
+        echo "✅ **Documentation**: All required files present" >> $GITHUB_STEP_SUMMARY
+        echo "✅ **Structure**: Project architecture validated" >> $GITHUB_STEP_SUMMARY
+        echo "✅ **Dependencies**: Requirements file validated" >> $GITHUB_STEP_SUMMARY
+        echo "" >> $GITHUB_STEP_SUMMARY
+        echo "🎯 **Ready for merge** - All QA system validation checks passed" >> $GITHUB_STEP_SUMMARY

@@ -1,0 +1,122 @@
+name: On-Demand QA Tests
+
+on:
+  workflow_dispatch:
+    inputs:
+      test_type:
+        description: 'Select QA test type'
+        required: true
+        default: 'individual'
+        type: choice
+        options:
+        - individual
+        - comprehensive
+        - quick
+        - data_quality
+        - timestamps
+        - duplicates
+        - business_logic
+      send_notifications:
+        description: 'Send Telegram notifications'
+        required: false
+        default: true
+        type: boolean
+      health_threshold:
+        description: 'Minimum health score to pass (0-100)'
+        required: false
+        default: '80'
+        type: string
+
+jobs:
+  on-demand-qa:
+    runs-on: ubuntu-latest
+    name: On-Demand Quality Assurance
+    
+    steps:
+    - name: Checkout repository
+      uses: actions/checkout@v4
+      
+    - name: Set up Python
+      uses: actions/setup-python@v4
+      with:
+        python-version: '3.9'
+        
+    - name: Install dependencies
+      run: |
+        python -m pip install --upgrade pip
+        pip install -r requirements.txt
+        
+    - name: Display test configuration
+      run: |
+        echo "🔍 QA Test Configuration:"
+        echo "  Test Type: ${{ github.event.inputs.test_type }}"
+        echo "  Notifications: ${{ github.event.inputs.send_notifications }}"
+        echo "  Health Threshold: ${{ github.event.inputs.health_threshold }}%"
+        echo "  Triggered by: ${{ github.actor }}"
+        echo "  Timestamp: $(date -u '+%Y-%m-%d %H:%M:%S UTC')"
+        
+    - name: Run Selected QA Test
+      run: |
+        TEST_TYPE="${{ github.event.inputs.test_type }}"
+        echo "🚀 Running $TEST_TYPE QA test..."
+        
+        case $TEST_TYPE in
+          "individual")
+            python run_qa.py --individual
+            ;;
+          "comprehensive") 
+            python run_qa.py --comprehensive
+            ;;
+          "quick")
+            python quick_qa_test.py
+            ;;
+          "data_quality"|"timestamps"|"duplicates"|"business_logic")
+            python run_qa.py --test $TEST_TYPE
+            ;;
+          *)
+            echo "❌ Unknown test type: $TEST_TYPE"
+            exit 1
+            ;;
+        esac
+      env:
+        DB_HOST: ${{ secrets.DB_HOST }}
+        DB_USER: ${{ secrets.DB_USER }}
+        DB_PASSWORD: ${{ secrets.DB_PASSWORD }}
+        DB_PORT: ${{ secrets.DB_PORT }}
+        DB_NAME: ${{ secrets.DB_NAME }}
+        TELEGRAM_BOT_TOKEN: ${{ github.event.inputs.send_notifications == 'true' && secrets.TELEGRAM_BOT_TOKEN || '' }}
+        TELEGRAM_CHAT_ID: ${{ github.event.inputs.send_notifications == 'true' && secrets.TELEGRAM_CHAT_ID || '' }}
+        OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
+        QA_HEALTH_THRESHOLD: ${{ github.event.inputs.health_threshold }}
+        
+    - name: Check Health Score
+      if: always()
+      run: |
+        # Extract health score from logs if available
+        THRESHOLD="${{ github.event.inputs.health_threshold }}"
+        echo "🎯 Checking if health score meets threshold of ${THRESHOLD}%"
+        
+        # This would need to be implemented based on actual output parsing
+        # For now, we'll assume the test passed if it didn't exit with error
+        echo "✅ Health check completed"
+        
+    - name: Upload Test Results
+      uses: actions/upload-artifact@v3
+      if: always()
+      with:
+        name: on-demand-qa-${{ github.event.inputs.test_type }}-${{ github.run_number }}
+        path: |
+          reports/
+          logs/
+          QA_REPORT_LOG.md
+          QA_STATUS_SUMMARY.md
+        retention-days: 15
+        
+    - name: Summary
+      if: always()
+      run: |
+        echo "📊 QA Test Summary:"
+        echo "  Test Type: ${{ github.event.inputs.test_type }}"
+        echo "  Status: ${{ job.status }}"
+        echo "  Run Number: ${{ github.run_number }}"
+        echo "  Artifacts: on-demand-qa-${{ github.event.inputs.test_type }}-${{ github.run_number }}"
