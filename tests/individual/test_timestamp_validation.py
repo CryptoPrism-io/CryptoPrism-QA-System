@@ -29,6 +29,10 @@ except ImportError:
         print(f"Import error: {e}")
         sys.exit(1)
 
+# Timestamp column per table (crypto_listings_latest_1000 has no "timestamp")
+TIMESTAMP_COLUMN = {'crypto_listings_latest_1000': 'last_updated'}
+
+
 def test_timestamp_validation():
     """Test timestamp quality and business logic rules."""
     print("=== Timestamp Validation Test ===")
@@ -64,14 +68,15 @@ def test_timestamp_validation():
             
             try:
                 # Basic timestamp analysis
-                timestamp_query = '''
+                ts = TIMESTAMP_COLUMN.get(table_name, 'timestamp')
+                timestamp_query = f'''
                 SELECT 
-                    MIN(timestamp) as first_ts,
-                    MAX(timestamp) as last_ts,
-                    COUNT(CASE WHEN timestamp IS NULL THEN 1 END) as null_count,
+                    MIN("{ts}") as first_ts,
+                    MAX("{ts}") as last_ts,
+                    COUNT(CASE WHEN "{ts}" IS NULL THEN 1 END) as null_count,
                     COUNT(*) as total_rows,
-                    COUNT(DISTINCT timestamp) as unique_timestamps
-                FROM {table}
+                    COUNT(DISTINCT "{ts}") as unique_timestamps
+                FROM {{table}}
                 '''
                 
                 result = db_manager.execute_performance_query_safe(
