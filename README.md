@@ -822,3 +822,5 @@ MIT License - see [LICENSE](LICENSE) file for details.
 <img src="https://capsule-render.vercel.app/api?type=waving&color=gradient&customColorList=0,2,6,12,20&height=120&section=footer&animation=twinkling" width="100%"/>
 
 </div>
+
+_Last reviewed: 2026-10-16_
