@@ -13,10 +13,10 @@ current_dir = Path(__file__).parent
 sys.path.insert(0, str(current_dir))
 
 try:
-    from quality_assurance_v2.core.config import QAConfig
-    from quality_assurance_v2.core.database import DatabaseManager
-    from quality_assurance_v2.reporting.notification_system import NotificationSystem
-    from quality_assurance_v2.core.base_qa import QAResult
+    from core.config import QAConfig
+    from core.database import DatabaseManager
+    from reporting.notification_system import NotificationSystem
+    from core.base_qa import QAResult
 except ImportError:
     try:
         from core.config import QAConfig

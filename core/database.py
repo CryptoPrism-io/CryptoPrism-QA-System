@@ -6,6 +6,8 @@ Handles connections to all three databases with connection pooling and health ch
 import logging
 from typing import Dict, Optional, Any, List
 from contextlib import contextmanager
+import os
+import ssl
 from sqlalchemy import create_engine, text, Engine
 from sqlalchemy.exc import SQLAlchemyError
 from sqlalchemy.pool import QueuePool
@@ -14,6 +16,21 @@ import time
 from .config import QAConfig
 
 logger = logging.getLogger(__name__)
+
+
+def _ssl_connect_args() -> dict:
+    """pg8000 only uses TLS when given an ssl_context, and RDS enforces SSL (rds.force_ssl=1).
+
+    DB_SSLMODE: disable | require (default: encrypt, no cert check) | verify-full (set DB_SSLROOTCERT to the RDS CA bundle).
+    """
+    mode = os.getenv("DB_SSLMODE", "require").lower()
+    if mode == "disable":
+        return {}
+    ctx = ssl.create_default_context(cafile=os.getenv("DB_SSLROOTCERT") or None)
+    if mode != "verify-full":
+        ctx.check_hostname = False
+        ctx.verify_mode = ssl.CERT_NONE
+    return {"ssl_context": ctx}
 
 class DatabaseManager:
     """
@@ -46,7 +63,8 @@ class DatabaseManager:
                     max_overflow=10,
                     pool_timeout=30,
                     pool_recycle=3600,  # Recycle connections every hour
-                    isolation_level="AUTOCOMMIT"
+                    isolation_level="AUTOCOMMIT",
+                    connect_args=_ssl_connect_args(),
                 )
                 
                 # Test connection

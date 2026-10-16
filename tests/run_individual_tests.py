@@ -8,7 +8,7 @@ import sys
 from pathlib import Path
 from datetime import datetime
 
-# Add paths for imports - go up one level to reach quality_assurance_v2 root
+# Add paths for imports - go up one level to reach the repo root
 current_dir = Path(__file__).parent
 qa_root = current_dir.parent
 sys.path.insert(0, str(qa_root))
@@ -18,8 +18,8 @@ try:
     from tests.individual.test_timestamp_validation import test_timestamp_validation
     from tests.individual.test_duplicate_detection import test_duplicate_detection
     from tests.individual.test_business_logic import test_business_logic
-    from quality_assurance_v2.core.config import QAConfig
-    from quality_assurance_v2.reporting.notification_system import NotificationSystem
+    from core.config import QAConfig
+    from reporting.notification_system import NotificationSystem
 except ImportError:
     try:
         from individual.test_data_quality import test_data_quality
