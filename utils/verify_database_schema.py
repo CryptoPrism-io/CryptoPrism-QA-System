@@ -12,8 +12,8 @@ current_dir = Path(__file__).parent
 sys.path.insert(0, str(current_dir))
 
 try:
-    from quality_assurance_v2.core.config import QAConfig
-    from quality_assurance_v2.core.database import DatabaseManager
+    from core.config import QAConfig
+    from core.database import DatabaseManager
 except ImportError:
     try:
         from core.config import QAConfig
