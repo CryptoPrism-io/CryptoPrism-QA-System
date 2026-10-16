@@ -42,10 +42,11 @@ def test_data_quality():
         
         # Focus on key tables and their critical columns
         table_column_mapping = {
-            'FE_DMV_ALL': ['slug', 'symbol', 'price', 'market_cap', 'dmv_score'],
-            'FE_DMV_SCORES': ['slug', 'symbol', 'durability_score', 'momentum_score', 'valuation_score'],
-            '1K_coins_ohlcv': ['slug', 'symbol', 'open', 'high', 'low', 'close', 'volume'],
-            'crypto_listings_latest_1000': ['slug', 'symbol', 'price', 'market_cap', 'percent_change_24h']
+            # Column names as they exist in RDS dbcp (checked 2026-10-16); quoted in SQL below
+            'FE_DMV_ALL': ['slug', 'timestamp', 'bullish', 'bearish', 'neutral'],
+            'FE_DMV_SCORES': ['slug', 'timestamp', 'Durability_Score', 'Momentum_Score', 'Valuation_Score'],
+            '1K_coins_ohlcv': ['slug', 'symbol', 'timestamp', 'open', 'high', 'low', 'close', 'volume', 'market_cap'],
+            'crypto_listings_latest_1000': ['slug', 'symbol', 'price', 'market_cap', 'percent_change24h', 'last_updated']
         }
         
         for table_name, critical_columns in table_column_mapping.items():
@@ -98,9 +99,9 @@ def test_data_quality():
                     # Build null percentage query
                     null_query = f'''
                     SELECT 
-                        COUNT(CASE WHEN {column} IS NULL THEN 1 END) as null_count,
+                        COUNT(CASE WHEN "{column}" IS NULL THEN 1 END) as null_count,
                         COUNT(*) as total_count,
-                        ROUND(COUNT(CASE WHEN {column} IS NULL THEN 1 END) * 100.0 / COUNT(*), 2) as null_percentage
+                        ROUND(COUNT(CASE WHEN "{column}" IS NULL THEN 1 END) * 100.0 / COUNT(*), 2) as null_percentage
                     FROM {{table}}
                     '''
                     
@@ -219,7 +220,7 @@ def test_data_quality():
                     empty_rows_query = f'''
                     SELECT COUNT(*) as empty_rows
                     FROM {{table}}
-                    WHERE {' AND '.join([f'{col} IS NULL' for col in critical_columns])}
+                    WHERE {' AND '.join([f'"{col}" IS NULL' for col in critical_columns])}
                     '''
                     
                     empty_result = db_manager.execute_performance_query_safe(
@@ -265,12 +266,12 @@ def test_data_quality():
                     # Check if column exists and has reasonable values
                     numeric_check_query = f'''
                     SELECT 
-                        MIN({num_col}) as min_val,
-                        MAX({num_col}) as max_val,
-                        AVG({num_col}) as avg_val,
-                        COUNT(CASE WHEN {num_col} < 0 THEN 1 END) as negative_count
+                        MIN("{num_col}") as min_val,
+                        MAX("{num_col}") as max_val,
+                        AVG("{num_col}") as avg_val,
+                        COUNT(CASE WHEN "{num_col}" < 0 THEN 1 END) as negative_count
                     FROM {{table}}
-                    WHERE {num_col} IS NOT NULL
+                    WHERE "{num_col}" IS NOT NULL
                     '''
                     
                     numeric_result = db_manager.execute_performance_query_safe(

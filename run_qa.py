@@ -129,7 +129,8 @@ Examples:
         
     elif args.individual:
         results, health_score = run_individual_tests()
-        print(f"\n[PASS] Individual tests completed - Health Score: {health_score:.1f}/100")
+        print(f"\nIndividual tests completed - Health Score: {health_score:.1f}/100")
+        sys.exit(qa_exit_code(results))
         
     elif args.comprehensive:
         success = run_comprehensive_tests()
@@ -137,6 +138,7 @@ Examples:
             print("\n[PASS] Comprehensive QA completed successfully")
         else:
             print("\n[FAIL] Comprehensive QA failed")
+            sys.exit(1)
             
     else:
         # Default: run individual tests
@@ -144,7 +146,24 @@ Examples:
         print("   Use --help to see all available options")
         print()
         results, health_score = run_individual_tests()
-        print(f"\n[PASS] Individual tests completed - Health Score: {health_score:.1f}/100")
+        print(f"\nIndividual tests completed - Health Score: {health_score:.1f}/100")
+        sys.exit(qa_exit_code(results))
+
+def qa_exit_code(results) -> int:
+    """0 = OK (warnings allowed); 1 = checks could not run, errored, or a HIGH/CRITICAL check failed."""
+    if not results:
+        print("\n[FAIL] No QA checks produced results (database unreachable or tests crashed)")
+        return 1
+    errors = [r for r in results if getattr(r, 'status', None) == 'ERROR']
+    severe = [r for r in results if getattr(r, 'status', None) == 'FAIL'
+              and getattr(r, 'risk_level', None) in ('HIGH', 'CRITICAL')]
+    for r in errors + severe:
+        print(f"  [{r.status}/{r.risk_level}] {r.check_name}: {r.message}")
+    if errors or severe:
+        print(f"\n[FAIL] {len(errors)} check(s) errored, {len(severe)} HIGH/CRITICAL failure(s)")
+        return 1
+    return 0
+
 
 if __name__ == "__main__":
     main()

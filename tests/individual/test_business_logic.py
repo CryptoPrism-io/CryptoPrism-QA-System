@@ -160,12 +160,12 @@ def test_business_logic():
                 if table_name == 'FE_DMV_SCORES':
                     score_validation_query = '''
                     SELECT 
-                        COUNT(CASE WHEN durability_score < 0 OR durability_score > 100 THEN 1 END) as invalid_durability,
-                        COUNT(CASE WHEN momentum_score < 0 OR momentum_score > 100 THEN 1 END) as invalid_momentum,
-                        COUNT(CASE WHEN valuation_score < 0 OR valuation_score > 100 THEN 1 END) as invalid_valuation,
+                        COUNT(CASE WHEN "Durability_Score" < 0 OR "Durability_Score" > 100 THEN 1 END) as invalid_durability,
+                        COUNT(CASE WHEN "Momentum_Score" < 0 OR "Momentum_Score" > 100 THEN 1 END) as invalid_momentum,
+                        COUNT(CASE WHEN "Valuation_Score" < 0 OR "Valuation_Score" > 100 THEN 1 END) as invalid_valuation,
                         COUNT(*) as total_rows
                     FROM {table}
-                    WHERE durability_score IS NOT NULL AND momentum_score IS NOT NULL AND valuation_score IS NOT NULL
+                    WHERE "Durability_Score" IS NOT NULL AND "Momentum_Score" IS NOT NULL AND "Valuation_Score" IS NOT NULL
                     '''
                     
                     score_result = db_manager.execute_performance_query_safe(
@@ -202,7 +202,7 @@ def test_business_logic():
                             ))
                 
                 # Business Logic Test 4: Market Cap Reasonableness
-                if 'market_cap' in ['price', 'market_cap']:  # Tables with market cap data
+                if table_name in ('1K_coins_ohlcv', 'crypto_listings_latest_1000'):  # tables that have market_cap
                     market_cap_query = '''
                     SELECT 
                         COUNT(CASE WHEN market_cap <= 0 THEN 1 END) as zero_market_cap,

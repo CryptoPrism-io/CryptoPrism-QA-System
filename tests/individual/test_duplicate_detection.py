@@ -28,6 +28,10 @@ except ImportError:
         print(f"Import error: {e}")
         sys.exit(1)
 
+# Timestamp column per table (crypto_listings_latest_1000 has no "timestamp")
+TIMESTAMP_COLUMN = {'crypto_listings_latest_1000': 'last_updated'}
+
+
 def test_duplicate_detection():
     """Test for duplicate records in key tables."""
     print("=== Duplicate Detection Test ===")
@@ -63,12 +67,13 @@ def test_duplicate_detection():
             
             try:
                 # Check for duplicates using the original QA logic
-                duplicate_query = '''
-                SELECT COUNT(*) - COUNT(DISTINCT (slug, timestamp)) as duplicates,
+                ts = TIMESTAMP_COLUMN.get(table_name, 'timestamp')
+                duplicate_query = f'''
+                SELECT COUNT(*) - COUNT(DISTINCT (slug, "{ts}")) as duplicates,
                        COUNT(*) as total_rows,
-                       COUNT(DISTINCT (slug, timestamp)) as unique_combinations
-                FROM {table} 
-                WHERE slug IS NOT NULL AND timestamp IS NOT NULL
+                       COUNT(DISTINCT (slug, "{ts}")) as unique_combinations
+                FROM {{table}} 
+                WHERE slug IS NOT NULL AND "{ts}" IS NOT NULL
                 '''
                 
                 result = db_manager.execute_performance_query_safe(
