@@ -345,7 +345,12 @@ def run_comprehensive_qa():
         
         # Send comprehensive notification
         notification_system = NotificationSystem(config)
-        print(f"\nSending comprehensive QA report to Telegram...")
+        nc = config.notification_config
+        telegram_enabled = bool(nc.get('telegram_bot_token') and nc.get('telegram_chat_id'))
+        if telegram_enabled:
+            print(f"\nSending comprehensive QA report to Telegram...")
+        else:
+            print("\n[SKIP] Telegram not configured (send_notifications=false or secrets unset); report not sent")
         
         success = notification_system.send_qa_summary_alert(
             results=qa_results,
@@ -354,7 +359,8 @@ def run_comprehensive_qa():
         )
         
         if success:
-            print("[PASS] Comprehensive QA report sent successfully!")
+            if telegram_enabled:
+                print("[PASS] Comprehensive QA report sent successfully!")
             return True
         else:
             print("[FAIL] Failed to send comprehensive QA report")
