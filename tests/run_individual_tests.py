@@ -167,7 +167,12 @@ def run_all_individual_tests():
             'test_approach': 'Individual test modules for focused debugging'
         }
         
-        print("\n📤 Sending combined summary notification...")
+        nc = notification_system.notification_config
+        telegram_enabled = bool(nc.get('telegram_bot_token') and nc.get('telegram_chat_id'))
+        if telegram_enabled:
+            print("\n📤 Sending combined summary notification...")
+        else:
+            print("\n[SKIP] Telegram not configured (send_notifications=false or secrets unset); summary not sent")
         notification_success = notification_system.send_qa_summary_alert(
             results=all_results,
             execution_metadata=execution_metadata,
@@ -175,7 +180,8 @@ def run_all_individual_tests():
         )
         
         if notification_success:
-            print("✅ Combined summary sent to Telegram")
+            if telegram_enabled:
+                print("✅ Combined summary sent to Telegram")
         else:
             print("⚠️ Failed to send combined summary")
             
