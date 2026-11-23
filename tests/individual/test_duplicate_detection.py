@@ -130,7 +130,7 @@ def test_duplicate_detection():
                         COUNT(CASE WHEN slug IS NULL THEN 1 END) as null_slug_count,
                         COUNT(CASE WHEN "{ts}" IS NULL THEN 1 END) as null_timestamp_count,
                         COUNT(*) as total_rows
-                    FROM {table}
+                    FROM {{table}}
                     '''
                     
                     null_result = db_manager.execute_performance_query_safe(

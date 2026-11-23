@@ -260,7 +260,7 @@ def test_business_logic():
                     COUNT(DISTINCT slug) as unique_slugs,
                     {uniq_sym} as unique_symbols,
                     COUNT(*) as total_rows
-                FROM {table}
+                FROM {{table}}
                 '''
                 
                 symbol_result = db_manager.execute_performance_query_safe(
