@@ -210,13 +210,13 @@ def test_timestamp_validation():
                         
                         print(f"  Hours since last update: {hours_since_update:.1f}")
                         
-                        if hours_since_update > 48:  # > 2 days
-                            print(f"  [WARN] Data may be stale ({hours_since_update:.1f} hours old)")
+                        if hours_since_update > 48:  # daily tables: > 2 days old means the pipeline stopped
+                            print(f"  [FAIL] Data is stale ({hours_since_update:.1f} hours old)")
                             results.append(QAResult(
                                 check_name=f"timestamps.data_freshness.{table_name}",
-                                status="WARNING",
-                                risk_level="MEDIUM",
-                                message=f"Data may be stale: {hours_since_update:.1f} hours since last update",
+                                status="FAIL",
+                                risk_level="HIGH",
+                                message=f"Data is stale: {hours_since_update:.1f} hours since last update",
                                 details={
                                     "database": "dbcp",
                                     "table": actual_table_name,
@@ -224,13 +224,13 @@ def test_timestamp_validation():
                                     "last_timestamp": str(last_ts)
                                 }
                             ))
-                        elif hours_since_update > 168:  # > 1 week
-                            print(f"  [FAIL] Data is stale ({hours_since_update:.1f} hours old)")
+                        elif hours_since_update > 30:  # a daily run was late
+                            print(f"  [WARN] Data may be stale ({hours_since_update:.1f} hours old)")
                             results.append(QAResult(
                                 check_name=f"timestamps.data_freshness.{table_name}",
-                                status="FAIL",
-                                risk_level="HIGH",
-                                message=f"Data is stale: {hours_since_update:.1f} hours since last update",
+                                status="WARNING",
+                                risk_level="MEDIUM",
+                                message=f"Data may be stale: {hours_since_update:.1f} hours since last update",
                                 details={
                                     "database": "dbcp",
                                     "table": actual_table_name,

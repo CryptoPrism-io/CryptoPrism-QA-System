@@ -247,12 +247,18 @@ def test_business_logic():
                             ))
                 
                 # Business Logic Test 5: Symbol and Slug Consistency
-                symbol_slug_query = '''
+                # FE_* tables are keyed by slug only; they have no symbol column.
+                if table_name.startswith('FE_'):
+                    empty_sym, uniq_sym = "0", "0"
+                else:
+                    empty_sym = "COUNT(CASE WHEN symbol IS NULL OR symbol = '' THEN 1 END)"
+                    uniq_sym = "COUNT(DISTINCT symbol)"
+                symbol_slug_query = f'''
                 SELECT 
                     COUNT(CASE WHEN slug IS NULL OR slug = '' THEN 1 END) as empty_slugs,
-                    COUNT(CASE WHEN symbol IS NULL OR symbol = '' THEN 1 END) as empty_symbols,
+                    {empty_sym} as empty_symbols,
                     COUNT(DISTINCT slug) as unique_slugs,
-                    COUNT(DISTINCT symbol) as unique_symbols,
+                    {uniq_sym} as unique_symbols,
                     COUNT(*) as total_rows
                 FROM {table}
                 '''

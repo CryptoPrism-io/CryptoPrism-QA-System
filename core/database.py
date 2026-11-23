@@ -32,6 +32,11 @@ def _ssl_connect_args() -> dict:
         ctx.verify_mode = ssl.CERT_NONE
     return {"ssl_context": ctx}
 
+# Every query that failed during this run. A check whose query fails used to be
+# dropped silently, so QA reported green on errors; run_qa.py now fails on these.
+QUERY_FAILURES: list = []
+
+
 class DatabaseManager:
     """
     Manages database connections for the QA system.
@@ -515,6 +520,7 @@ class DatabaseManager:
         table_info = self.table_exists(database, table_name)
         
         if not table_info['exists']:
+            QUERY_FAILURES.append({'table': table_name, 'description': description, 'error': 'table not found'})
             return {
                 'status': 'table_not_found',
                 'table_requested': table_name,
@@ -529,6 +535,13 @@ class DatabaseManager:
         query = query_template.format(table=f'"{actual_table_name}"')
         result = self.execute_performance_query(database, query, description)
         
+        if result.get('status') != 'success':
+            QUERY_FAILURES.append({
+                'table': actual_table_name,
+                'description': description,
+                'error': str(result.get('error', result.get('status')))[:300],
+            })
+
         # Add table resolution info
         result['table_requested'] = table_name
         result['table_actual'] = actual_table_name

@@ -125,10 +125,10 @@ def test_duplicate_detection():
                         ))
                     
                     # Additional check: rows with NULL slug or timestamp
-                    null_check_query = '''
+                    null_check_query = f'''
                     SELECT 
                         COUNT(CASE WHEN slug IS NULL THEN 1 END) as null_slug_count,
-                        COUNT(CASE WHEN timestamp IS NULL THEN 1 END) as null_timestamp_count,
+                        COUNT(CASE WHEN "{ts}" IS NULL THEN 1 END) as null_timestamp_count,
                         COUNT(*) as total_rows
                     FROM {table}
                     '''

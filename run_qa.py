@@ -155,12 +155,16 @@ def qa_exit_code(results) -> int:
         print("\n[FAIL] No QA checks produced results (database unreachable or tests crashed)")
         return 1
     errors = [r for r in results if getattr(r, 'status', None) == 'ERROR']
+    from core.database import QUERY_FAILURES
+    for f in QUERY_FAILURES:
+        print(f"  [QUERY FAILED] {f['table']}: {f['description']}: {f['error'][:160]}")
     severe = [r for r in results if getattr(r, 'status', None) == 'FAIL'
               and getattr(r, 'risk_level', None) in ('HIGH', 'CRITICAL')]
     for r in errors + severe:
         print(f"  [{r.status}/{r.risk_level}] {r.check_name}: {r.message}")
-    if errors or severe:
-        print(f"\n[FAIL] {len(errors)} check(s) errored, {len(severe)} HIGH/CRITICAL failure(s)")
+    if errors or severe or QUERY_FAILURES:
+        print(f"\n[FAIL] {len(errors)} check(s) errored, {len(severe)} HIGH/CRITICAL failure(s), "
+              f"{len(QUERY_FAILURES)} query failure(s)")
         return 1
     return 0
 
